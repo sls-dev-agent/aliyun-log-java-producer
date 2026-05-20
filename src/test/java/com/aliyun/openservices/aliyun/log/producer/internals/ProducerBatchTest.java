@@ -1,7 +1,7 @@
 package com.aliyun.openservices.aliyun.log.producer.internals;
 
 import com.aliyun.openservices.aliyun.log.producer.Attempt;
-import com.aliyun.openservices.aliyun.log.producer.ProducerTest;
+import com.aliyun.openservices.aliyun.log.producer.ProducerTestSupport;
 import com.aliyun.openservices.aliyun.log.producer.Result;
 import com.aliyun.openservices.log.common.LogItem;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -37,11 +37,11 @@ public class ProducerBatchTest {
     GroupKey groupKey = new GroupKey("project", "logStore", "topic", "source", "shardHash");
     ProducerBatch batch = new ProducerBatch(groupKey, "id", 20, 10, 3, System.currentTimeMillis());
     List<LogItem> logItems = new ArrayList<LogItem>();
-    logItems.add(ProducerTest.buildLogItem());
-    logItems.add(ProducerTest.buildLogItem());
-    logItems.add(ProducerTest.buildLogItem());
+    logItems.add(ProducerTestSupport.buildLogItem());
+    logItems.add(ProducerTestSupport.buildLogItem());
+    logItems.add(ProducerTestSupport.buildLogItem());
     int sizeInBytes = LogSizeCalculator.calculate(logItems);
-        ListenableFuture<Result> f = batch.tryAppend(logItems, sizeInBytes, null);
+    ListenableFuture<Result> f = batch.tryAppend(logItems, sizeInBytes, null);
     Assert.assertNotNull(f);
     Assert.assertTrue(batch.isMeetSendCondition());
   }

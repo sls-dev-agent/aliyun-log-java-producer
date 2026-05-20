@@ -90,6 +90,23 @@ public class LogProducer implements Producer {
    * @see ProducerConfig
    */
   public LogProducer(ProducerConfig producerConfig) {
+    this(producerConfig, null);
+  }
+
+  /**
+   * Start up a LogProducer instance with a caller-supplied {@link ServiceClient}.
+   *
+   * <p>Primarily intended for unit tests that want to swap in a {@code FakeServiceClient} so the
+   * producer can be exercised without real network I/O. When {@code serviceClient} is {@code null}
+   * the producer falls back to its default {@link TimeoutServiceClient}, preserving the existing
+   * behaviour of {@link #LogProducer(ProducerConfig)}.
+   *
+   * @param producerConfig Configuration for the LogProducer.
+   * @param serviceClient Optional {@link ServiceClient} that will be passed through to every
+   *     internal {@link Client} so outbound HTTP traffic can be intercepted; pass {@code null} for
+   *     the production default.
+   */
+  public LogProducer(ProducerConfig producerConfig, ServiceClient serviceClient) {
     this.instanceId = INSTANCE_ID_GENERATOR.getAndIncrement();
     this.name = LOG_PRODUCER_PREFIX + this.instanceId;
     this.producerHash = Utils.generateProducerHash(this.instanceId);
@@ -113,7 +130,10 @@ public class LogProducer implements Producer {
     this.clientConfiguration = new ClientConfiguration();
     clientConfiguration.setRegion(producerConfig.getRegion());
     clientConfiguration.setSignatureVersion(producerConfig.getSignVersion());
-    this.serviceClient = new TimeoutServiceClient(clientConfiguration, this.timeoutThreadPool);
+    this.serviceClient =
+        serviceClient != null
+            ? serviceClient
+            : new TimeoutServiceClient(clientConfiguration, this.timeoutThreadPool);
     this.accumulator =
         new LogAccumulator(
             this.producerHash,

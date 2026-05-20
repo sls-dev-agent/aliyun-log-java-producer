@@ -1,6 +1,6 @@
 package com.aliyun.openservices.aliyun.log.producer.internals;
 
-import com.aliyun.openservices.aliyun.log.producer.ProducerTest;
+import com.aliyun.openservices.aliyun.log.producer.ProducerTestSupport;
 import com.aliyun.openservices.log.common.LogItem;
 import org.junit.Assert;
 import org.junit.Test;
@@ -9,8 +9,8 @@ public class LogSizeCalculatorTest {
 
   @Test
   public void testCalculateLog() {
-    ProducerTest.buildLogItem();
-    int sizeInBytes = LogSizeCalculator.calculate(ProducerTest.buildLogItem());
+    ProducerTestSupport.buildLogItem();
+    int sizeInBytes = LogSizeCalculator.calculate(ProducerTestSupport.buildLogItem());
     Assert.assertEquals(32, sizeInBytes);
 
     LogItem logItem = new LogItem();
@@ -53,8 +53,8 @@ public class LogSizeCalculatorTest {
 
   @Test
   public void testCalculateLogs() {
-    ProducerTest.buildLogItem();
-    int sizeInBytes = LogSizeCalculator.calculate(ProducerTest.buildLogItems(4));
+    ProducerTestSupport.buildLogItem();
+    int sizeInBytes = LogSizeCalculator.calculate(ProducerTestSupport.buildLogItems(4));
     Assert.assertEquals(128, sizeInBytes);
   }
 }

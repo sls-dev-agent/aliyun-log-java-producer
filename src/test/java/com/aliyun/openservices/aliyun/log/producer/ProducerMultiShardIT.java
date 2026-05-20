@@ -2,16 +2,23 @@ package com.aliyun.openservices.aliyun.log.producer;
 
 import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 import com.aliyun.openservices.aliyun.log.producer.errors.ResultFailedException;
+import com.aliyun.openservices.log.testing.IntegrationEnv;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-public class ProducerMultiShardTest {
+public class ProducerMultiShardIT {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
+
+  @BeforeClass
+  public static void loadEnv() {
+    IntegrationEnv.loadOrSkip();
+  }
 
   @Test
   public void testSend() throws InterruptedException, ProducerException, ExecutionException {
@@ -36,7 +43,7 @@ public class ProducerMultiShardTest {
             "",
             "shard3",
             "127.0.0.1",
-            ProducerTest.buildLogItem());
+            ProducerTestSupport.buildLogItem());
     Result result = f.get();
     Assert.assertTrue(result.isSuccessful());
 
@@ -47,12 +54,12 @@ public class ProducerMultiShardTest {
             null,
             "shard1",
             "192.168.0.2",
-            ProducerTest.buildLogItem());
+            ProducerTestSupport.buildLogItem());
     result = f.get();
     Assert.assertTrue(result.isSuccessful());
 
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -79,7 +86,7 @@ public class ProducerMultiShardTest {
             "",
             "",
             "0",
-            ProducerTest.buildLogItem());
+            ProducerTestSupport.buildLogItem());
     try {
       f.get();
     } catch (ExecutionException e) {

@@ -1,6 +1,7 @@
 package com.aliyun.openservices.aliyun.log.producer;
 
 import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
+import com.aliyun.openservices.log.testing.IntegrationEnv;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,13 +10,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ProducerMultiProjectTest {
+public class ProducerMultiProjectIT {
 
   private final Random random = new Random();
 
   private final List<String> shardHashList = new ArrayList<String>();
+
+  @BeforeClass
+  public static void loadEnv() {
+    IntegrationEnv.loadOrSkip();
+  }
 
   @Before
   public void setUp() {
@@ -51,7 +58,7 @@ public class ProducerMultiProjectTest {
               "topic",
               null,
               getShardHash(),
-              ProducerTest.buildLogItem(),
+              ProducerTestSupport.buildLogItem(),
               new Callback() {
                 @Override
                 public void onCompletion(Result result) {
@@ -68,7 +75,7 @@ public class ProducerMultiProjectTest {
               null,
               "source",
               getShardHash(),
-              ProducerTest.buildLogItem(),
+              ProducerTestSupport.buildLogItem(),
               new Callback() {
                 @Override
                 public void onCompletion(Result result) {
@@ -87,7 +94,7 @@ public class ProducerMultiProjectTest {
     producer.close();
     Assert.assertEquals(n * 2, successCount.get());
     Assert.assertEquals(n * 2, futureGetCount);
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   private String getShardHash() {

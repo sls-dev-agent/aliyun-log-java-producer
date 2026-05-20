@@ -2,6 +2,7 @@ package com.aliyun.openservices.aliyun.log.producer;
 
 import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 import com.aliyun.openservices.log.common.LogItem;
+import com.aliyun.openservices.log.testing.IntegrationEnv;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -9,9 +10,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ProducerLargeAmountTest {
+public class ProducerLargeAmountIT {
+
+  private static IntegrationEnv ENV;
+
+  @BeforeClass
+  public static void loadEnv() {
+    ENV = IntegrationEnv.loadOrSkip();
+  }
 
   private final Random random = new Random();
 
@@ -33,11 +42,11 @@ public class ProducerLargeAmountTest {
               try {
                 for (int i = 0; i < times; ++i) {
                   producer.send(
-                      System.getenv("PROJECT"),
-                      System.getenv("LOG_STORE"),
+                      ENV.getProject(),
+                      ENV.getLogStore(),
                       getTopic(),
                       getSource(),
-                      ProducerTest.buildLogItem(),
+                      ProducerTestSupport.buildLogItem(),
                       new Callback() {
                         @Override
                         public void onCompletion(Result result) {
@@ -59,7 +68,7 @@ public class ProducerLargeAmountTest {
     Thread.sleep(producerConfig.getLingerMs() * 2);
     producer.close();
     Assert.assertEquals(nTasks * times, successCount.get());
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -69,7 +78,7 @@ public class ProducerLargeAmountTest {
     final AtomicInteger successCount = new AtomicInteger(0);
     final int nTasks = 100;
     final int times = 1000;
-    final List<LogItem> logItems = ProducerTest.buildLogItems(50);
+    final List<LogItem> logItems = ProducerTestSupport.buildLogItems(50);
     ExecutorService executorService = Executors.newFixedThreadPool(nTasks);
     final CountDownLatch latch = new CountDownLatch(nTasks);
     for (int i = 0; i < nTasks; ++i) {
@@ -80,8 +89,8 @@ public class ProducerLargeAmountTest {
               try {
                 for (int i = 0; i < times; ++i) {
                   producer.send(
-                      System.getenv("PROJECT"),
-                      System.getenv("LOG_STORE"),
+                      ENV.getProject(),
+                      ENV.getLogStore(),
                       getTopic(),
                       getSource(),
                       logItems,
@@ -106,15 +115,12 @@ public class ProducerLargeAmountTest {
     Thread.sleep(producerConfig.getLingerMs() * 4);
     producer.close();
     Assert.assertEquals(nTasks * times, successCount.get());
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   private ProjectConfig buildProjectConfig() {
-    String project = System.getenv("PROJECT");
-    String endpoint = System.getenv("ENDPOINT");
-    String accessKeyId = System.getenv("ACCESS_KEY_ID");
-    String accessKeySecret = System.getenv("ACCESS_KEY_SECRET");
-    return new ProjectConfig(project, endpoint, accessKeyId, accessKeySecret);
+    return new ProjectConfig(
+        ENV.getProject(), ENV.getEndpoint(), ENV.getAccessKeyId(), ENV.getAccessKeySecret());
   }
 
   private String getTopic() {

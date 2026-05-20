@@ -8,21 +8,34 @@ import com.aliyun.openservices.aliyun.log.producer.errors.ResultFailedException;
 import com.aliyun.openservices.aliyun.log.producer.errors.TimeoutException;
 import com.aliyun.openservices.aliyun.log.producer.internals.LogSizeCalculator;
 import com.aliyun.openservices.log.common.LogItem;
+import com.aliyun.openservices.log.testing.IntegrationEnv;
 import com.google.common.math.LongMath;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-public class ProducerInvalidTest {
+public class ProducerInvalidIT {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private static final int logSize = LogSizeCalculator.calculate(ProducerTest.buildLogItem());
+  private static final int logSize =
+      LogSizeCalculator.calculate(ProducerTestSupport.buildLogItem());
+
+  @BeforeClass
+  public static void loadEnv() {
+    // These tests construct a real LogProducer that opens IO threads / DNS
+    // sockets, so we gate them behind IntegrationEnv even though most don't
+    // need actual SLS credentials -- so `mvn -B test` stays offline and only
+    // `mvn -B verify` (with env) runs them.
+    IntegrationEnv.loadOrSkip();
+  }
+
   @Test
   public void testSendWithNullProject() throws InterruptedException, ProducerException {
     ProducerConfig producerConfig = new ProducerConfig();
@@ -33,7 +46,7 @@ public class ProducerInvalidTest {
     thrown.expectMessage("project cannot be null");
     producer.send(null, "logStore", new LogItem());
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -45,7 +58,7 @@ public class ProducerInvalidTest {
     thrown.expectMessage("project cannot be empty");
     producer.send("", "logStore", new LogItem());
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -65,7 +78,7 @@ public class ProducerInvalidTest {
           "Cannot get the projectConfig for project projectNotExist", result.getErrorMessage());
     }
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -77,7 +90,7 @@ public class ProducerInvalidTest {
     thrown.expectMessage("logStore cannot be null");
     producer.send("project", null, new LogItem());
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -89,7 +102,7 @@ public class ProducerInvalidTest {
     thrown.expectMessage("logStore cannot be empty");
     producer.send("project", "", new LogItem());
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -101,7 +114,7 @@ public class ProducerInvalidTest {
     thrown.expectMessage("logItem cannot be null");
     producer.send("project", "logStore", (LogItem) null);
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -113,7 +126,7 @@ public class ProducerInvalidTest {
     thrown.expectMessage("logItems cannot be null");
     producer.send("project", "logStore", (List<LogItem>) null);
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -126,7 +139,7 @@ public class ProducerInvalidTest {
     List<LogItem> logItems = new ArrayList<LogItem>();
     producer.send("project", "logStore", logItems);
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -141,7 +154,7 @@ public class ProducerInvalidTest {
             + ProducerConfig.MAX_BATCH_COUNT);
     List<LogItem> logItems = new ArrayList<LogItem>();
     for (int i = 0; i < ProducerConfig.MAX_BATCH_COUNT + 1; ++i) {
-      logItems.add(ProducerTest.buildLogItem());
+      logItems.add(ProducerTestSupport.buildLogItem());
     }
     producer.send("project", "logStore", logItems);
   }
@@ -155,10 +168,12 @@ public class ProducerInvalidTest {
     producer.putProjectConfig(buildProjectConfig());
     thrown.expect(LogSizeTooLargeException.class);
     thrown.expectMessage(
-        "the logs is " + logSize + " bytes which is larger than the totalSizeInBytes you specified");
-    producer.send("project", "logStore", ProducerTest.buildLogItem());
+        "the logs is "
+            + logSize
+            + " bytes which is larger than the totalSizeInBytes you specified");
+    producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -170,14 +185,16 @@ public class ProducerInvalidTest {
     producer.putProjectConfig(buildProjectConfig());
     thrown.expect(LogSizeTooLargeException.class);
     thrown.expectMessage(
-        "the logs is " + logSize * 3 + " bytes which is larger than the totalSizeInBytes you specified");
+        "the logs is "
+            + logSize * 3
+            + " bytes which is larger than the totalSizeInBytes you specified");
     List<LogItem> logItems = new ArrayList<LogItem>();
-    logItems.add(ProducerTest.buildLogItem());
-    logItems.add(ProducerTest.buildLogItem());
-    logItems.add(ProducerTest.buildLogItem());
+    logItems.add(ProducerTestSupport.buildLogItem());
+    logItems.add(ProducerTestSupport.buildLogItem());
+    logItems.add(ProducerTestSupport.buildLogItem());
     producer.send("project", "logStore", logItems);
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -188,8 +205,8 @@ public class ProducerInvalidTest {
     Producer producer = new LogProducer(producerConfig);
     producer.putProjectConfig(buildProjectConfig());
     thrown.expect(TimeoutException.class);
-    producer.send("project", "logStore", ProducerTest.buildLogItem());
-    producer.send("project", "logStore", ProducerTest.buildLogItem());
+    producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
+    producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
   }
 
   @Test
@@ -200,7 +217,8 @@ public class ProducerInvalidTest {
     producerConfig.setMaxReservedAttempts(retries + 1);
     Producer producer = new LogProducer(producerConfig);
     producer.putProjectConfig(buildProjectConfig());
-    ListenableFuture<Result> f = producer.send("project", "logStore", ProducerTest.buildLogItem());
+    ListenableFuture<Result> f =
+        producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
     try {
       f.get();
     } catch (ExecutionException e) {
@@ -238,7 +256,7 @@ public class ProducerInvalidTest {
       }
     }
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -250,7 +268,8 @@ public class ProducerInvalidTest {
     producerConfig.setMaxReservedAttempts(maxReservedAttempts);
     Producer producer = new LogProducer(producerConfig);
     producer.putProjectConfig(buildProjectConfig());
-    ListenableFuture<Result> f = producer.send("project", "logStore", ProducerTest.buildLogItem());
+    ListenableFuture<Result> f =
+        producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
     try {
       f.get();
     } catch (ExecutionException e) {
@@ -272,7 +291,7 @@ public class ProducerInvalidTest {
       }
     }
     producer.close();
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -286,7 +305,7 @@ public class ProducerInvalidTest {
     List<ListenableFuture> futures = new ArrayList<ListenableFuture>();
     for (int i = 0; i < n; ++i) {
       ListenableFuture<Result> f =
-          producer.send("project", "logStore", ProducerTest.buildLogItem());
+          producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
       futures.add(f);
     }
     for (int i = 0; i < 1000; ++i) {
@@ -314,7 +333,7 @@ public class ProducerInvalidTest {
       }
     }
     Assert.assertEquals(n, futureGetCount);
-    ProducerTest.assertProducerFinalState(producer);
+    ProducerTestSupport.assertProducerFinalState(producer);
   }
 
   @Test
@@ -328,7 +347,7 @@ public class ProducerInvalidTest {
     List<ListenableFuture> futures = new ArrayList<ListenableFuture>();
     for (int i = 0; i < n; ++i) {
       ListenableFuture<Result> f =
-          producer.send("project", "logStore", ProducerTest.buildLogItem());
+          producer.send("project", "logStore", ProducerTestSupport.buildLogItem());
       futures.add(f);
     }
     closeInMultiThreads(producer, 100);
@@ -366,7 +385,7 @@ public class ProducerInvalidTest {
                 @Override
                 public Object call() throws Exception {
                   producer.close();
-                  ProducerTest.assertProducerFinalState(producer);
+                  ProducerTestSupport.assertProducerFinalState(producer);
                   return null;
                 }
               });
