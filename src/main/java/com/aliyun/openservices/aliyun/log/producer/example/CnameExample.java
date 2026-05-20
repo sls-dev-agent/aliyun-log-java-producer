@@ -22,7 +22,8 @@ public class CnameExample {
     String endpoint = "your endpoint";
 
     Producer producer = new LogProducer(new ProducerConfig());
-    ProjectConfig projectConfig = new ProjectConfig(project, endpoint, getCredentialsProvider(), null);
+    ProjectConfig projectConfig =
+        new ProjectConfig(project, endpoint, getCredentialsProvider(), null);
 
     // set cname to true
     projectConfig.setCname(true);

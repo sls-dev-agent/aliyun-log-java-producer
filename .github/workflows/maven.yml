@@ -1,0 +1,63 @@
+# Java producer CI: split unit + integration test jobs.
+#
+# - "unit-test" runs `mvn test` (surefire, *Test classes only). No network.
+#   Runs on every push / pull request to master.
+# - "integration-test" runs `mvn verify` (failsafe, *IT classes). Opt-in via
+#   workflow_dispatch. Reads LOG_TEST_* from repository secrets; without them
+#   every IT is reported Skipped (not Failed) via IntegrationEnv.loadOrSkip().
+
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        cache: maven
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml -DskipTests -Dgpg.skip=true
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        cache: maven
+    - name: Run unit tests (no network)
+      run: mvn -B test --file pom.xml -Dgpg.skip=true
+
+  integration-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        cache: maven
+    - name: Run integration tests (real SLS endpoint)
+      env:
+        LOG_TEST_ENDPOINT: ${{ secrets.LOG_TEST_ENDPOINT }}
+        LOG_TEST_ACCESS_KEY_ID: ${{ secrets.LOG_TEST_ACCESS_KEY_ID }}
+        LOG_TEST_ACCESS_KEY_SECRET: ${{ secrets.LOG_TEST_ACCESS_KEY_SECRET }}
+        LOG_TEST_PROJECT: ${{ secrets.LOG_TEST_PROJECT }}
+        LOG_TEST_LOG_STORE: ${{ secrets.LOG_TEST_LOG_STORE }}
+      run: mvn -B verify --file pom.xml -Dgpg.skip=true

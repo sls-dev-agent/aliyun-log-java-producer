@@ -91,7 +91,8 @@ public class SendProducerBatchTask implements Runnable {
       try {
         PutLogsRequest request = buildPutLogsRequest(batch);
         if (producerConfig.getCompressType() != null) {
-          Consts.CompressType compressType = Consts.CompressType.fromString(producerConfig.getCompressType());
+          Consts.CompressType compressType =
+              Consts.CompressType.fromString(producerConfig.getCompressType());
           if (compressType != null && compressType != Consts.CompressType.NONE) {
             request.setCompressType(compressType);
           }
@@ -175,7 +176,7 @@ public class SendProducerBatchTask implements Runnable {
       request.setContentType(Consts.CONST_SLS_JSON);
     }
     request.setProcessor(producerConfig.getProcessor());
-    if(producerConfig.getSpl() != null) {
+    if (producerConfig.getSpl() != null) {
       request.SetParam("spl", producerConfig.getSpl());
     }
     return request;
