@@ -129,8 +129,7 @@ public final class LogAccumulator {
     try {
       GroupKey groupKey = new GroupKey(project, logStore, topic, source, shardHash);
       ProducerBatchHolder holder = getOrCreateProducerBatchHolder(groupKey);
-      AppendResult appendResult =
-          appendToHolder(groupKey, logItems, callback, sizeInBytes, holder);
+      AppendResult appendResult = appendToHolder(groupKey, logItems, callback, sizeInBytes, holder);
 
       submitProducerBatch(appendResult.existingBatchToSend);
       submitProducerBatch(appendResult.newBatchToSend);
